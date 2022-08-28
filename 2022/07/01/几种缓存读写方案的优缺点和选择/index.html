@@ -1,0 +1,813 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="史俊锋在搬砖">
+  <meta name="keywords" content="Java开发工程">
+  
+    <meta name="description" content="前言在日常开发中，缓存是提升系统瓶颈的最简单方法之一，如果缓存使用得当，缓存可以增加系统吞吐量，减少响应时间、减少数据库负载等。 但在不同的场景下，所适用缓存读写策略是不尽相同的，这篇文章将介绍不同缓存读写策略在不同场合下的使用与存在问题的分析，并给出解决方案～ Cache Aside PatternCache Aside Pattern 意为旁路缓存模式，是我们平时最常用的一个缓存读写模式，应用">
+<meta property="og:type" content="article">
+<meta property="og:title" content="几种缓存读写方案的优缺点和选择">
+<meta property="og:url" content="http://xdcherish.github.io/2022/07/01/%E5%87%A0%E7%A7%8D%E7%BC%93%E5%AD%98%E8%AF%BB%E5%86%99%E6%96%B9%E6%A1%88%E7%9A%84%E4%BC%98%E7%BC%BA%E7%82%B9%E5%92%8C%E9%80%89%E6%8B%A9/index.html">
+<meta property="og:site_name" content="史俊锋在搬砖">
+<meta property="og:description" content="前言在日常开发中，缓存是提升系统瓶颈的最简单方法之一，如果缓存使用得当，缓存可以增加系统吞吐量，减少响应时间、减少数据库负载等。 但在不同的场景下，所适用缓存读写策略是不尽相同的，这篇文章将介绍不同缓存读写策略在不同场合下的使用与存在问题的分析，并给出解决方案～ Cache Aside PatternCache Aside Pattern 意为旁路缓存模式，是我们平时最常用的一个缓存读写模式，应用">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://xdcherish.github.io/img/%E7%BC%93%E5%AD%98%E7%B3%BB%E5%88%97.png">
+<meta property="article:published_time" content="2022-07-01T12:24:11.000Z">
+<meta property="article:modified_time" content="2022-08-24T11:40:33.353Z">
+<meta property="article:author" content="史俊锋在搬砖">
+<meta property="article:tag" content="后端">
+<meta property="article:tag" content="缓存">
+<meta property="article:tag" content="Redis">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://xdcherish.github.io/img/%E7%BC%93%E5%AD%98%E7%B3%BB%E5%88%97.png">
+  
+  
+  
+  <title>几种缓存读写方案的优缺点和选择 - 史俊锋在搬砖</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"xdcherish.github.io","root":"/","version":"1.9.2","typing":{"enable":true,"typeSpeed":50,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>史俊锋在搬砖</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/bg3.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">几种缓存读写方案的优缺点和选择</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-07-01 20:24" pubdate>
+          2022年7月1日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          5.9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          50 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">几种缓存读写方案的优缺点和选择</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在日常开发中，缓存是提升系统瓶颈的最简单方法之一，如果缓存使用得当，缓存可以增加系统吞吐量，减少响应时间、减少数据库负载等。</p>
+<p>但在不同的场景下，所适用缓存读写策略是不尽相同的，这篇文章将介绍不同缓存读写策略在不同场合下的使用与存在问题的分析，并给出解决方案～</p>
+<h2 id="Cache-Aside-Pattern"><a href="#Cache-Aside-Pattern" class="headerlink" title="Cache Aside Pattern"></a>Cache Aside Pattern</h2><p>Cache Aside Pattern 意为旁路缓存模式，是我们平时最常用的一个缓存读写模式，应用程序需要一起操作 DB 和 Cache，并且以 DB 的数据为准。<br>下面我们来看一下这个模式下的缓存读写步骤。</p>
+<h3 id="方案"><a href="#方案" class="headerlink" title="方案"></a>方案</h3><h4 id="写"><a href="#写" class="headerlink" title="写"></a>写</h4><ol>
+<li><p>更新 DB</p>
+</li>
+<li><p>删除 Cache</p>
+</li>
+</ol>
+<h4 id="读"><a href="#读" class="headerlink" title="读"></a>读</h4><ol>
+<li><p>从 Cache 中读取数据，有数据直接返回</p>
+</li>
+<li><p>Cache中没数据的话，从 DB 中读取数据，数据更新到 Cache 中后返回。</p>
+</li>
+</ol>
+<h3 id="代码实施"><a href="#代码实施" class="headerlink" title="代码实施"></a>代码实施</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">DataCacheManager</span> &#123;<br><br>    <span class="hljs-keyword">public</span> Data <span class="hljs-title function_">query</span><span class="hljs-params">(Long id)</span> &#123;<br>        <span class="hljs-type">String</span> <span class="hljs-variable">key</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;keyPrefix:&quot;</span> + id;<br>        <span class="hljs-comment">//查询缓存</span><br>        <span class="hljs-type">Data</span> <span class="hljs-variable">data</span> <span class="hljs-operator">=</span> cacheService.get(key);<br>        <span class="hljs-keyword">if</span>(data == <span class="hljs-literal">null</span>) &#123;<br>            <span class="hljs-comment">//查询DB</span><br>            data = dataDao.get(id);<br>            <span class="hljs-comment">//更新缓存</span><br>            cacheService.set(key, data);<br>        &#125;<br>        <span class="hljs-keyword">return</span> data;<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> Data <span class="hljs-title function_">update</span><span class="hljs-params">(Data data)</span> &#123;<br>        <span class="hljs-comment">//更新DB</span><br>        data = dataDao.update(data);<br>        <span class="hljs-comment">//更新缓存</span><br>        <span class="hljs-type">String</span> <span class="hljs-variable">key</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;keyPrefix:&quot;</span> + data.getId();<br>        cacheService.del(key);<br>    &#125;<br><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>在工作中的时候，我的应用分层是按照《阿里巴巴Java开发手册》进行的，如下图所示。所以我一般会将缓存的这块逻辑单独抽离，介于Dao层和Service层之间的Manager中实现，这样多个Service通常可以复用这样的缓存代码。</p>
+<p><img src="/imgs/%E5%87%A0%E7%A7%8D%E7%BC%93%E5%AD%98%E8%AF%BB%E5%86%99%E6%96%B9%E6%A1%88%E7%9A%84%E4%BC%98%E7%BC%BA%E7%82%B9%E5%92%8C%E9%80%89%E6%8B%A9/841a623c23f94e42a19db1d67ec2ac92~tplv-k3u1fbpfcp-watermark-20220823160159228.png" srcset="/img/loading.gif" lazyload></p>
+<h3 id="存在的问题"><a href="#存在的问题" class="headerlink" title="存在的问题"></a>存在的问题</h3><p>看完上面的方案，可能你心里会有一些疑惑，为什么是删除缓存，而不是更新缓存？为什么是先更新DB，再删除Cache，可以交换下顺序吗？按照Cache Aside Pattern的实现，先更新DB，后删除Cache就一定没有问题了吗？我们一个个来分析。</p>
+<h4 id="1-为什么是删除缓存，而不是更新缓存？"><a href="#1-为什么是删除缓存，而不是更新缓存？" class="headerlink" title="1.为什么是删除缓存，而不是更新缓存？"></a>1.为什么是删除缓存，而不是更新缓存？</h4><p>从直观的角度上来看，更新操作，直接把缓存一起更新了应该是个更容易理解的方案。但从性能和安全的角度上来看，直接更新缓存就不一定是合理的了。</p>
+<h5 id="性能"><a href="#性能" class="headerlink" title="性能"></a>性能</h5><p>对于一些比较大的key，更新Cache比删除Cache更耗费性能。甚至当写操作比较多时，可能会存在刚更新的缓存还没有被读过，又再次被更新的情况（这常被称为缓存扰动），导致缓存利用率不高。所以，基于懒加载的思想，不用就没必要存在，所以Cache Aside更支持直接del。</p>
+<p>实际上，一般key也不会太大，而且我在生产中使用缓存的场景读请求流量也不会低，所以对于性能的影响个人感觉还好。</p>
+<h5 id="安全"><a href="#安全" class="headerlink" title="安全"></a>安全</h5><p>在并发场景下，多个写请求同时更新缓存可能会造成数据不一致的问题，看下面这个过程：</p>
+<table>
+<thead>
+<tr>
+<th align="center">写请求1</th>
+<th align="center">写请求2</th>
+<th align="center">读请求3</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">更新数据A到DB</td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center"></td>
+<td align="center">更新数据B到DB</td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center"></td>
+<td align="center">更新数据B到Cache</td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center">更新数据A到Cache</td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center">查询Cache数据，读取到A</td>
+</tr>
+</tbody></table>
+<p>由于线程调度等原因，写请求 1 的更新Cache操作晚于写请求 2 中的更新Cache操作，这样会导致最终写入缓存中的是来自写请求 1 的数据A，从而使得后面的读操作读取到的都是旧值。</p>
+<h4 id="2-为什么是先更新DB，再删除Cache，可以交换下顺序吗？"><a href="#2-为什么是先更新DB，再删除Cache，可以交换下顺序吗？" class="headerlink" title="2.为什么是先更新DB，再删除Cache，可以交换下顺序吗？"></a>2.为什么是先更新DB，再删除Cache，可以交换下顺序吗？</h4><p>同样地，先删除Cache，再更新DB，也可能会造成DB数据和Cache数据的不一致。为什么呢？看下面这个过程：</p>
+<table>
+<thead>
+<tr>
+<th align="center">写请求1</th>
+<th align="center">读请求2</th>
+<th align="center">读请求3</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">删除Cache数据A</td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center"></td>
+<td align="center">查询Cache数据A不存在</td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center"></td>
+<td align="center">从DB读取数据A</td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center"></td>
+<td align="center">更新数据A到Cache</td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center">更新数据B到DB</td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center">查询Cache数据，读取到A</td>
+</tr>
+</tbody></table>
+<p>当多个请求<strong>并发</strong>时，写请求1的两个操作之间穿插了请求2的所有操作（主要是写DB比较慢，需要分配更多的时间片才能执行完成），导致Cache的数据没有正确更新。只有等下次更新或者缓存自动过期后才会把最新的数据B存入缓存，如果是更新则有可能再次发生这样的问题，导致一直不一致…</p>
+<h4 id="3-按照Cache-Aside-Pattern的实现，先更新DB，后删除Cache就一定没有问题了吗？"><a href="#3-按照Cache-Aside-Pattern的实现，先更新DB，后删除Cache就一定没有问题了吗？" class="headerlink" title="3.按照Cache Aside Pattern的实现，先更新DB，后删除Cache就一定没有问题了吗？"></a>3.按照Cache Aside Pattern的实现，先更新DB，后删除Cache就一定没有问题了吗？</h4><p>理论上来说还是可能会出现数据不一致性的问题，看下面这个过程：</p>
+<table>
+<thead>
+<tr>
+<th align="center">请求1</th>
+<th align="center">请求2</th>
+<th align="center">请求3</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">查询Cache，不存在</td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center">从DB读取数据A</td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center"></td>
+<td align="center">更新数据B到DB</td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center"></td>
+<td align="center">删除Cache数据A</td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center">更新数据A到Cache</td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center">查询Cache，读取到数据A</td>
+</tr>
+</tbody></table>
+<p>同样可能由于线程调度等原因，读请求 1 的更新Cache操作晚于写请求 2 中的删除Cache操作，这样会导致最终写入缓存中的是来自请求 1 的旧值A，而写入数据库中的是来自请求 2 的新值B，即缓存数据落后于数据库，此时再有读请求 3 命中缓存，读取到的便是旧值A。</p>
+<p>但与之前不同的是，这种场景出现的概率要小许多，因为更新DB所需的线程调度时间要远大于更新Cache，所以一般情况下都是Cache先执行完成。</p>
+<h4 id="4-Cache-Aside-Pattern如何完全杜绝数据不一致问题？"><a href="#4-Cache-Aside-Pattern如何完全杜绝数据不一致问题？" class="headerlink" title="4.Cache Aside Pattern如何完全杜绝数据不一致问题？"></a>4.Cache Aside Pattern如何完全杜绝数据不一致问题？</h4><p>两个字，<strong>加锁</strong>，单机加JVM锁，集群加分布式锁。</p>
+<p>对于写操作，需要将更新DB和删除Cache锁住，</p>
+<p>对于读操作，需要将查询Cache不存在之后的操作锁住。</p>
+<p>并且需要注意读操作和写操作的锁需要使用一把！！！即读操作没有命中缓存的时候不能进行写操作，反之同理。</p>
+<p>来优化下之前的代码，假设是集群环境，使用分布式锁。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">DataCacheManager</span> &#123;<br><br>    <span class="hljs-keyword">public</span> Data <span class="hljs-title function_">query</span><span class="hljs-params">(Long id)</span> &#123;<br>        <span class="hljs-type">String</span> <span class="hljs-variable">key</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;keyPrefix:&quot;</span> + id;<br>        <span class="hljs-comment">//查询缓存</span><br>        <span class="hljs-type">Data</span> <span class="hljs-variable">data</span> <span class="hljs-operator">=</span> cacheService.get(key);<br>        <span class="hljs-keyword">if</span>(data == <span class="hljs-literal">null</span>) &#123;<br>              <span class="hljs-keyword">try</span> &#123;<br>                cacheService.lock(key, <span class="hljs-number">2</span>);<br>                <span class="hljs-comment">//查询DB</span><br>                data = dataDao.get(id);<br>                <span class="hljs-comment">//更新缓存</span><br>                cacheService.set(key, data); <br>            &#125; <span class="hljs-keyword">finally</span> &#123;<br>                cacheService.unLock(key);<br>            &#125;<br>        &#125;<br>        <span class="hljs-keyword">return</span> data;<br>    &#125;<br><br>    <span class="hljs-meta">@RedisLock(keySuffix = &quot;#data.id&quot;, keyPrefix = &quot;keyPrefix:&quot;)</span><br>    <span class="hljs-keyword">public</span> Data <span class="hljs-title function_">update</span><span class="hljs-params">(Data data)</span> &#123;<br>        <span class="hljs-comment">//更新DB</span><br>        data = dataDao.update(data);<br>        <span class="hljs-comment">//更新缓存</span><br>        <span class="hljs-type">String</span> <span class="hljs-variable">key</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;keyPrefix:&quot;</span> + data.getId();<br>        cacheService.del(key);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>注：对@RedisLock不熟悉的推荐参考下<a target="_blank" rel="noopener" href="https://juejin.cn/post/7069768248635424775">巧用 分布式锁 🔥 - 掘金</a>，能更简单的使用分布式锁～</p>
+</blockquote>
+<p>不过，加锁势必会影响性能，导致系统吞吐量下降，并发高时可能还会造成堵塞线程过多从而OOM。</p>
+<h4 id="5-Cache-Aside-Pattern如何尽量降低数据不一致的影响？"><a href="#5-Cache-Aside-Pattern如何尽量降低数据不一致的影响？" class="headerlink" title="5.Cache Aside Pattern如何尽量降低数据不一致的影响？"></a>5.Cache Aside Pattern如何尽量降低数据不一致的影响？</h4><p>既然加锁会降低性能，如果能接受短暂时间的数据不一致场景，应该怎么尽量降低其影响呢？</p>
+<p>解决办法就是更新Cache的同时给Cache增加一个比较<strong>短的过期时间</strong>，这样可以保证即使数据不一致的话影响也比较小。</p>
+<p>但如果在短时间内，有大量缓存同时过期，导致大量的请求直接查询数据库，从而对数据库造成了巨大的压力，严重情况下可能会导致数据库宕机，这种情况叫做缓存雪崩。缓存雪崩的解决方案稍后再讨论，接着往下看～</p>
+<h4 id="6-Cache-Aside-Pattern首次读请求问题"><a href="#6-Cache-Aside-Pattern首次读请求问题" class="headerlink" title="6.Cache Aside Pattern首次读请求问题"></a>6.Cache Aside Pattern首次读请求问题</h4><p>对于第一次读取的Cache，数据一定不在Cache中，如果服务发布后一下来很多个读请求，很可能同时绕过<code>if(data == null)</code>判断条件从而一起请求DB，造成压力过大。</p>
+<p>如何解决这个问题呢？</p>
+<p>可以将热点数据提前加载到Cache中，比如读取配置获取热点数据Key，然后使用<code>@PostConstruct</code>注解在服务启动之前加载数据。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">DataCacheManager</span> &#123;<br><br>    <span class="hljs-meta">@PostConstruct</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">init</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-comment">//假设配置的热点id为520，666</span><br>        List&lt;Long&gt; hotIds = Lists.newArrayList(<span class="hljs-number">520L</span>, <span class="hljs-number">666L</span>);<br>        <span class="hljs-keyword">for</span> (Long hotId : hotIds) &#123;<br>            <span class="hljs-type">Data</span> <span class="hljs-variable">data</span> <span class="hljs-operator">=</span> dataDao.get(hotId);<br>            <span class="hljs-comment">//更新缓存</span><br>            cacheService.set(key, data, <span class="hljs-number">60</span>);<br>        &#125;<br>    &#125;<br>    <span class="hljs-comment">//...</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="适用场景"><a href="#适用场景" class="headerlink" title="适用场景"></a>适用场景</h3><p>由上述分析，该方案适合<strong>读多写少</strong>的场景，并且尽量使用在对数据一致性要求没有那么高的场景，例如商品详情页的商品数据缓存，商品描述和价格等信息变化的频次一般都很低，即使价格有变化，在下单的时候订单系统会读取最新的商品价格，确保数据准确。</p>
+<h2 id="Read-Through-Pattern"><a href="#Read-Through-Pattern" class="headerlink" title="Read Through Pattern"></a>Read Through Pattern</h2><p>Read-Through 意为读穿透模式，它的流程和 Cache-Aside 读操作基本类似，不同点在于 Read-Through 中多了一个访问控制层，应用读请求只和访问控制层进行交互，而背后缓存命中与否的逻辑则由访问控制层与数据源进行交互。</p>
+<p>这样做可以使业务层的实现会更加简洁，并且对于缓存层及持久化层的交互封装做得更好，可以更轻松的扩展和迁移。</p>
+<h3 id="方案-1"><a href="#方案-1" class="headerlink" title="方案"></a>方案</h3><ol>
+<li><p>应用程序读请求访问控制层</p>
+</li>
+<li><p>访问控制层从 Cache 中读取数据，读取到就直接返回。</p>
+</li>
+<li><p>读取不到的话，先从 DB 加载，写入到 Cache 后返回。</p>
+</li>
+</ol>
+<p><img src="/imgs/%E5%87%A0%E7%A7%8D%E7%BC%93%E5%AD%98%E8%AF%BB%E5%86%99%E6%96%B9%E6%A1%88%E7%9A%84%E4%BC%98%E7%BC%BA%E7%82%B9%E5%92%8C%E9%80%89%E6%8B%A9/31d5d8047e394699a6acc9f294bbe137~tplv-k3u1fbpfcp-watermark-20220823160159039.png" srcset="/img/loading.gif" lazyload alt="image-20220725135145017.png"></p>
+<p>举个例子，著名的本地缓存Guava Cache采用的就是该模式。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">//初始化</span><br>LoadingCache&lt;String, Data&gt; loadingCache = CacheBuilder.newBuilder()<br>            .maximumSize(<span class="hljs-number">1000</span>)<br>            .expireAfterAccess(<span class="hljs-number">1</span>, TimeUnit.MINUTES)<br>            .build(<br>                    <span class="hljs-keyword">new</span> <span class="hljs-title class_">CacheLoader</span>&lt;String, Data&gt;() &#123;<br>                        <span class="hljs-keyword">public</span> Data <span class="hljs-title function_">load</span><span class="hljs-params">(String key)</span> &#123;<br>                            <span class="hljs-keyword">return</span> dataDao.query(key);<br>                        &#125;<br>                    &#125;<br>            );<br><br><span class="hljs-comment">//读操作，里面包含了 获取缓存-如果没有-则计算&quot;[get-if-absent-compute]的原子语义</span><br>loadingCache.get(key);<br></code></pre></td></tr></table></figure>
+
+<p>实际上，在Cache Aside Pattern 中的实现上我们通过将缓存的逻辑抽离到Manager层中，一定程度上也算是勉强达到了降低应用层复杂度的效果（主要是将Service层当作了应用层）。</p>
+<h3 id="适用场景-1"><a href="#适用场景-1" class="headerlink" title="适用场景"></a>适用场景</h3><p>该方案适合<strong>读请求多</strong>的场景，并且对数据一致性要求没有那么高的场景。另外，该方案也同样存在首次读取问题，可以在初始化时模拟外部读请求使数据能提前加载。</p>
+<h2 id="Write-Through-Pattern"><a href="#Write-Through-Pattern" class="headerlink" title="Write Through Pattern"></a>Write Through Pattern</h2><p>Write-Through 意为写穿透模式，它也增加了访问控制层来提供更高程度的封装。不同于 Cache-Aside 的是，Write-Through 直写模式在写请求更新Cache之后，更新DB，并且这两步操作需要控制层保证是一个原子操作。</p>
+<h3 id="方案-2"><a href="#方案-2" class="headerlink" title="方案"></a>方案</h3><ol>
+<li>应用程序请求访问控制层</li>
+<li>访问控制层 更新Cache</li>
+<li>同步更新DB</li>
+</ol>
+<p><img src="/imgs/%E5%87%A0%E7%A7%8D%E7%BC%93%E5%AD%98%E8%AF%BB%E5%86%99%E6%96%B9%E6%A1%88%E7%9A%84%E4%BC%98%E7%BC%BA%E7%82%B9%E5%92%8C%E9%80%89%E6%8B%A9/d8fffb9a299b42d780486be48c702815~tplv-k3u1fbpfcp-watermark-20220823160159036.png" srcset="/img/loading.gif" lazyload></p>
+<h3 id="存在的问题-1"><a href="#存在的问题-1" class="headerlink" title="存在的问题"></a>存在的问题</h3><h4 id="1-为什么先更新Cache，再更新DB？"><a href="#1-为什么先更新Cache，再更新DB？" class="headerlink" title="1.为什么先更新Cache，再更新DB？"></a>1.为什么先更新Cache，再更新DB？</h4><p>这里顺序关系不大，不管是先更新Cache还是先更新DB，都可能存在之前Cache Aside问题一中提过的脏数据问题。解决办法就是问题四的方式，通过加锁解决并发问题。</p>
+<h4 id="2-如何保证两步操作的原子性？"><a href="#2-如何保证两步操作的原子性？" class="headerlink" title="2.如何保证两步操作的原子性？"></a>2.如何保证两步操作的原子性？</h4><p>俊峰之前也没尝试过这种方案，但可以提出一些自己的想法～</p>
+<p>如果更新Cache失败了，由于是第一步，可以返回异常让客户端重试。</p>
+<p>如果是更新DB失败了，需要看怎么设计，如果希望客户端重试的话，可以把更新Cache回滚。如果不希望客户端重试，可以把失败的请求发送到消息队列中，然后消费该消息补偿失败。</p>
+<h3 id="适用场景-2"><a href="#适用场景-2" class="headerlink" title="适用场景"></a>适用场景</h3><p>Write Through通常会和Read Through一同使用，满足读写需求。该方案主要适用于<strong>写请求比较多</strong>的场景，并且对<strong>数据一致性要求较高</strong>的场景，比如银行系统。</p>
+<p>俊峰平时在开发过程很少见到有项目使用Write Through方案，除了必须保证更新Cache和更新DB的原子性会造成一定性能方面的影响外，最主要的是缓存服务的封装是比较难实现的，或者可以接入一些现成的框架，比如Redis官网推荐的<a target="_blank" rel="noopener" href="https://github.com/RedisGears/rgsync">RedisGears</a>。</p>
+<h2 id="Write-Behind-Pattern（异步缓存写入）"><a href="#Write-Behind-Pattern（异步缓存写入）" class="headerlink" title="Write Behind Pattern（异步缓存写入）"></a>Write Behind Pattern（异步缓存写入）</h2><p>Write Behind 又叫 Write Back，意为异步回写模式。它与Read-Through&#x2F;Write-Through 一样，具有类似的访问控制层提供到应用程序。不同的是，Write behind 在处理写请求时，只更新Cache后就返回，对于数据库的更新，则是通过批量<strong>异步</strong>更新的方式进行的，批量写入的时间点可以选在数据库负载较低的时间进行。</p>
+<h3 id="方案-3"><a href="#方案-3" class="headerlink" title="方案"></a>方案</h3><ol>
+<li><p>应用程序请求访问控制层</p>
+</li>
+<li><p>访问控制层 更新Cache</p>
+</li>
+<li><p>异步更新DB</p>
+</li>
+</ol>
+<p><img src="/imgs/%E5%87%A0%E7%A7%8D%E7%BC%93%E5%AD%98%E8%AF%BB%E5%86%99%E6%96%B9%E6%A1%88%E7%9A%84%E4%BC%98%E7%BC%BA%E7%82%B9%E5%92%8C%E9%80%89%E6%8B%A9/2e850d63b568490dab7c8fab0881b810~tplv-k3u1fbpfcp-watermark-20220823160159081.png" srcset="/img/loading.gif" lazyload></p>
+<h3 id="存在的问题-2"><a href="#存在的问题-2" class="headerlink" title="存在的问题"></a>存在的问题</h3><h4 id="1-异步相比Write-Through带来了哪些好处和问题？"><a href="#1-异步相比Write-Through带来了哪些好处和问题？" class="headerlink" title="1.异步相比Write Through带来了哪些好处和问题？"></a>1.异步相比Write Through带来了哪些好处和问题？</h4><p>在 Write-Behind 模式下，由于不用同步更新DB，写请求延迟大大降低，并减轻了数据库的压力，具有较好的吞吐性。</p>
+<p>但数据库和缓存的一致性较弱，比如当更新的数据还未被写入数据库时，直接从数据库中查询数据是落后于缓存的。同时，缓存的负载较大，如果缓存宕机会导致数据丢失，所以需要做好缓存的高可用（以后会介绍～）。</p>
+<h3 id="适用场景-3"><a href="#适用场景-3" class="headerlink" title="适用场景"></a>适用场景</h3><p>显然，根据上面的分析，Write behind 模式下非常适合<strong>大量写操作</strong>的场景，比如电商秒杀场景中库存的扣减。</p>
+<p>在之前的文章——<a target="_blank" rel="noopener" href="https://juejin.cn/post/7069776553810329613">如何选择一个合适的库存扣减方案？</a>中我们提到过Redis配合lua脚本的方案，实际上和Write Behind思想是一致的，都是先更新Cache，后异步更新DB，只是没有单独封装访问控制层。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>四种缓存方案各有优缺点，这也印证了那句老话，没有最完美的方案，只有最适合的方案。</p>
+<p>俊峰在实际项目中使用的最多的就是Cache Aside（用于Redis），有时候会结合Read Through（用于本地缓存guava）构成二级缓存，后面会单独写一篇文章介绍～</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E7%BC%93%E5%AD%98%E7%B3%BB%E5%88%97/" class="category-chain-item">缓存系列</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E5%90%8E%E7%AB%AF/">#后端</a>
+      
+        <a href="/tags/%E7%BC%93%E5%AD%98/">#缓存</a>
+      
+        <a href="/tags/Redis/">#Redis</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>几种缓存读写方案的优缺点和选择</div>
+      <div>http://xdcherish.github.io/2022/07/01/几种缓存读写方案的优缺点和选择/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>史俊锋在搬砖</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年7月1日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2022/07/15/%E5%BD%BB%E5%BA%95%E8%A7%A3%E5%86%B3%E7%BC%93%E5%AD%98%E9%9B%AA%E5%B4%A9%E3%80%81%E5%87%BB%E7%A9%BF%E3%80%81%E7%A9%BF%E9%80%8F%E9%97%AE%E9%A2%98/" title="彻底解决缓存雪崩、击穿、穿透问题">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">彻底解决缓存雪崩、击穿、穿透问题</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/06/15/String-concat%E5%92%8C-%E7%9A%84%E5%8C%BA%E5%88%AB/" title="String concat和+ 的区别">
+                        <span class="hidden-mobile">String concat和+ 的区别</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
