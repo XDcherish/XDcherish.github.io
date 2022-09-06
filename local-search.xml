@@ -4,6 +4,25 @@
   
   
   <entry>
+    <title>chrome、idea常用快捷键</title>
+    <link href="/2022/08/29/chrome%E3%80%81idea%E5%B8%B8%E7%94%A8%E5%BF%AB%E6%8D%B7%E9%94%AE/"/>
+    <url>/2022/08/29/chrome%E3%80%81idea%E5%B8%B8%E7%94%A8%E5%BF%AB%E6%8D%B7%E9%94%AE/</url>
+    
+    <content type="html"><![CDATA[<h2 id="chrome"><a href="#chrome" class="headerlink" title="chrome"></a>chrome</h2><p>⌘ + N 打开全新标签 （ + shift 变为无痕）<br>⌘ + T 打开并跳转到新网页<br>⌘ + shift + T 关闭最近一次关闭的网页；<br>⌘ + option + &lt;-  光标回到左边的网页；<br>⌘ + option + -&gt;  光标回到右边的网页；<br>⌘ + shift + C 打开网页检查（用于调试);</p><p>⌘ + Option + i 打开“开发者工具”（用于调试);</p><p>⌘ 和 +放大网页上的所有内容<br>⌘ 和 -缩小网页上的所有内容<br>⌘ + Ctrl + f   开启或关闭全屏模式<br>⌘ + r 刷新当前网页</p><h2 id="idea"><a href="#idea" class="headerlink" title="idea"></a>idea</h2><p>⌘ + option + &lt;-  光标回到上次的位置；<br>⌘ + option + -&gt;  光标回到上次的位置；<br>⌘ + L 跳到某一行某一列；<br>⌘ + shift + F 全局搜索；<br>⌘ + option + B 查看当前类&#x2F;方法的继承；</p><p>双击 shift 查找某个文件；</p>]]></content>
+    
+    
+    
+    <tags>
+      
+      <tag>工具</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>一种能彻底解决缓存三大难题的缓存方案</title>
     <link href="/2022/08/01/%E4%B8%80%E7%A7%8D%E8%83%BD%E5%BD%BB%E5%BA%95%E8%A7%A3%E5%86%B3%E7%BC%93%E5%AD%98%E4%B8%89%E5%A4%A7%E9%9A%BE%E9%A2%98%E7%9A%84%E7%BC%93%E5%AD%98%E6%96%B9%E6%A1%88/"/>
     <url>/2022/08/01/%E4%B8%80%E7%A7%8D%E8%83%BD%E5%BD%BB%E5%BA%95%E8%A7%A3%E5%86%B3%E7%BC%93%E5%AD%98%E4%B8%89%E5%A4%A7%E9%9A%BE%E9%A2%98%E7%9A%84%E7%BC%93%E5%AD%98%E6%96%B9%E6%A1%88/</url>
